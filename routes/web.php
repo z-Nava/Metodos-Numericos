@@ -19,4 +19,5 @@ Route::get('/', function () {
 });
 
 Route::get('/euler-method', [MethodsController::class, 'index'])->name('euler-method');
+Route::post('/euler-method', [MethodsController::class, 'calculateEuler'])->name('calculate-euler');
 

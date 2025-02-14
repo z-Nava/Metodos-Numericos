@@ -11,7 +11,7 @@
         <!-- Formulario -->
         <div class="bg-white shadow-md rounded-lg p-6 mb-6">
             <h2 class="text-xl font-semibold mb-4">Ingrese los datos</h2>
-            <form action="/euler-mejorado" method="POST">
+            <form action="{{route('calculate-euler')}}" method="POST">
                 @csrf
                 <div class="mb-4">
                     <label for="x0" class="block text-gray-700">x0:</label>
@@ -47,8 +47,8 @@
                     <tbody>
                         @foreach ($result as $point)
                             <tr class="bg-gray-100 border-b">
-                                <td class="px-4 py-2">{{ $point['x'] }}</td>
-                                <td class="px-4 py-2">{{ $point['y'] }}</td>
+                                <td class="text-center px-4 py-2">{{ $point['x'] }}</td>
+                                <td class="text-center px-4 py-2">{{ $point['y'] }}</td>
                             </tr>
                         @endforeach
                     </tbody>
