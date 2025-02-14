@@ -16,6 +16,11 @@ class MethodsController extends Controller
         return view('methods-views.kutta-method');
     }
 
+    public function indexN()
+    {
+        return view('methods-views.newton-method');
+    }
+
     public function calculateEuler(Request $request)
     {
         $x0 = $request->input('x0');
