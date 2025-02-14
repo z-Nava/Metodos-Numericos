@@ -8,6 +8,9 @@
 </head>
 <body class="bg-gray-100">
     <div class="container mx-auto px-4 py-8">
+    <div class="ml-4 text-center text-sm text-gray-500 sm:text-right sm:ml-0">
+            Laravel v{{ Illuminate\Foundation\Application::VERSION }} (PHP v{{ PHP_VERSION }})
+        </div>
         <h1 class="text-4xl font-bold text-center mb-8">Métodos Numéricos</h1>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div class="bg-white rounded-lg shadow-lg overflow-hidden">

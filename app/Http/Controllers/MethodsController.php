@@ -48,12 +48,6 @@ class MethodsController extends Controller
 
         return $result;
     }
-
-    private function f($x, $y)
-    {
-        // Define aquí tu función diferencial
-        return $x + $y;
-    }
     
     public function calculateKutta(Request $request)
     {
@@ -65,7 +59,6 @@ class MethodsController extends Controller
         $result = $this->rungeKutta($x0, $y0, $h, $n);
         return view('methods-views.kutta-method', ['result' => $result]);
     }
-
 
     private function rungeKutta($x0, $y0, $h, $n)
     {
@@ -84,5 +77,53 @@ class MethodsController extends Controller
         }
 
         return $result;
+    }
+
+    public function calculateNewton(Request $request)
+    {
+        $x0 = $request->input('x0');
+        $tol = $request->input('tol');
+        $maxIter = $request->input('maxIter');
+
+        $result = $this->newtonRaphson($x0, $tol, $maxIter);
+        return view('methods-views.newton-method', ['result' => $result]);
+    }
+
+    public function newtonRaphson($x0, $tol, $maxIter)
+    {
+        $result = [];
+        $x = $x0;
+        for ($i = 0; $i < $maxIter; $i++) {
+            $fx = $this->fN($x);
+            $dfx = $this->df($x);
+            if ($dfx == 0) {
+                break; // Avoid division by zero
+            }
+            $x1 = $x - $fx / $dfx;
+            $result[] = ['iteration' => $i, 'x' => $x1];
+            if (abs($x1 - $x) < $tol) {
+                break; // Convergence criterion
+            }
+            $x = $x1;
+        }
+        return $result;
+    }
+
+    private function fN($x)
+    {
+        // Define aquí tu función
+        return $x * $x - 2; // Ejemplo: x^2 - 2
+    }
+
+    private function df($x)
+    {
+        // Define aquí la derivada de tu función
+        return 2 * $x; // Ejemplo: derivada de x^2 - 2 es 2x
+    }
+
+    private function f($x, $y)
+    {
+        // Define aquí tu función diferencial
+        return $x + $y;
     }
 }
