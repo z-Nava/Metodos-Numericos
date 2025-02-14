@@ -22,6 +22,7 @@ Route::get('/euler-method', [MethodsController::class, 'indexE'])->name('euler-m
 Route::post('/euler-method', [MethodsController::class, 'calculateEuler'])->name('calculate-euler');
 
 Route::get('/runge-kutta-method', [MethodsController::class, 'indexK'])->name('kutta-method');
+Route::post('/runge-kutta-method', [MethodsController::class, 'calculateKutta'])->name('calculate-kutta');
 
 
 Route::get('/newton-method', [MethodsController::class, 'indexN'])->name('newton-method');
