@@ -6,9 +6,14 @@ use Illuminate\Http\Request;
 
 class MethodsController extends Controller
 {
-    public function index()
+    public function indexE()
     {
         return view('methods-views.euler-method');
+    }
+
+    public function indexK()
+    {
+        return view('methods-views.kutta-method');
     }
 
     public function calculateEuler(Request $request)

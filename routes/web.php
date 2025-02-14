@@ -18,6 +18,8 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/euler-method', [MethodsController::class, 'index'])->name('euler-method');
+Route::get('/euler-method', [MethodsController::class, 'indexE'])->name('euler-method');
 Route::post('/euler-method', [MethodsController::class, 'calculateEuler'])->name('calculate-euler');
+
+Route::get('/runge-kutta-method', [MethodsController::class, 'indexK'])->name('kutta-method');
 
