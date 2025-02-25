@@ -27,25 +27,35 @@ class MethodsController extends Controller
         $y0 = $request->input('y0');
         $h = $request->input('h');
         $n = $request->input('n');
-
-        $result = $this->eulerMejorado($x0, $y0, $h, $n);
+        $equation = $request->input('equation');
+    
+        // Pasamos la ecuación al método
+        $result = $this->eulerMejorado($x0, $y0, $h, $n, $equation);
+    
         return view('methods-views.euler-method', ['result' => $result]);
     }
-
-    private function eulerMejorado($x0, $y0, $h, $n)
+    
+    private function eulerMejorado($x0, $y0, $h, $n, $equation)
     {
         $x = $x0;
         $y = $y0;
         $result = [];
-
+    
+        // Creamos una función anónima para evaluar la ecuación en cada paso
+        $f = function($x, $y) use ($equation) {
+            // Reemplazamos 'x' y 'y' en la ecuación y luego evaluamos
+            $equation = str_replace(['x', 'y'], ['($x)', '($y)'], $equation);
+            return eval("return $equation;");
+        };
+    
         for ($i = 0; $i < $n; $i++) {
-            $k1 = $h * $this->f($x, $y);
-            $k2 = $h * $this->f($x + $h, $y + $k1);
+            $k1 = $h * $f($x, $y);
+            $k2 = $h * $f($x + $h, $y + $k1);
             $y = $y + 0.5 * ($k1 + $k2);
             $x = $x + $h;
             $result[] = ['x' => $x, 'y' => $y];
         }
-
+    
         return $result;
     }
     
@@ -55,22 +65,31 @@ class MethodsController extends Controller
         $y0 = $request->input('y0');
         $h = $request->input('h');
         $n = $request->input('n');
+        $equation = $request->input('equation');  // Leemos la ecuación ingresada
 
-        $result = $this->rungeKutta($x0, $y0, $h, $n);
+        $result = $this->rungeKutta($x0, $y0, $h, $n, $equation);  // Pasamos la ecuación al cálculo
+
         return view('methods-views.kutta-method', ['result' => $result]);
     }
 
-    private function rungeKutta($x0, $y0, $h, $n)
+    private function rungeKutta($x0, $y0, $h, $n, $equation)
     {
         $x = $x0;
         $y = $y0;
         $result = [];
 
+        // Creamos una función anónima para evaluar la ecuación en cada paso
+        $f = function($x, $y) use ($equation) {
+            // Reemplazamos 'x' y 'y' en la ecuación y luego evaluamos
+            $equation = str_replace(['x', 'y'], ['($x)', '($y)'], $equation);
+            return eval("return $equation;");
+        };
+
         for ($i = 0; $i < $n; $i++) {
-            $k1 = $h * $this->f($x, $y);
-            $k2 = $h * $this->f($x + 0.5 * $h, $y + 0.5 * $k1);
-            $k3 = $h * $this->f($x + 0.5 * $h, $y + 0.5 * $k2);
-            $k4 = $h * $this->f($x + $h, $y + $k3);
+            $k1 = $h * $f($x, $y);
+            $k2 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k1);
+            $k3 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k2);
+            $k4 = $h * $f($x + $h, $y + $k3);
             $y = $y + (1 / 6) * ($k1 + 2 * $k2 + 2 * $k3 + $k4);
             $x = $x + $h;
             $result[] = ['x' => $x, 'y' => $y];
@@ -78,6 +97,7 @@ class MethodsController extends Controller
 
         return $result;
     }
+
 
     public function calculateNewton(Request $request)
     {
