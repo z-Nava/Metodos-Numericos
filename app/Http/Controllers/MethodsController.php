@@ -23,41 +23,56 @@ class MethodsController extends Controller
 
     public function calculateEuler(Request $request)
     {
-        $x0 = $request->input('x0');
-        $y0 = $request->input('y0');
-        $h = $request->input('h');
-        $n = $request->input('n');
+        // Convertimos los valores a float para evitar problemas con la evaluación
+        $x0 = floatval($request->input('x0'));
+        $y0 = floatval($request->input('y0'));
+        $h = floatval($request->input('h'));
+        $n = intval($request->input('n')); // Aseguramos que es un número entero
         $equation = $request->input('equation');
-    
-        // Pasamos la ecuación al método
+
+        // Llamamos al método de Euler Mejorado
         $result = $this->eulerMejorado($x0, $y0, $h, $n, $equation);
-    
+
         return view('methods-views.euler-method', ['result' => $result]);
     }
-    
+
     private function eulerMejorado($x0, $y0, $h, $n, $equation)
-    {
-        $x = $x0;
-        $y = $y0;
-        $result = [];
-    
-        // Creamos una función anónima para evaluar la ecuación en cada paso
-        $f = function($x, $y) use ($equation) {
-            // Reemplazamos 'x' y 'y' en la ecuación y luego evaluamos
-            $equation = str_replace(['x', 'y'], ['($x)', '($y)'], $equation);
-            return eval("return $equation;");
+{
+    $x = $x0;
+    $y = $y0;
+    $result = [];
+
+    // Reemplazamos operadores incorrectos antes de evaluar
+    $equation = str_replace('^', '**', $equation);
+
+    for ($i = 0; $i < $n; $i++) {
+        // Reemplazamos 'x' y 'y' en la ecuación con sus valores actuales
+        $equationEvaluable = str_replace(['x', 'y'], ['$x', '$y'], $equation);
+
+        // Función anónima segura para evaluar la ecuación
+        $f = function ($x, $y) use ($equationEvaluable) {
+            return eval("return $equationEvaluable;");
         };
-    
-        for ($i = 0; $i < $n; $i++) {
-            $k1 = $h * $f($x, $y);
-            $k2 = $h * $f($x + $h, $y + $k1);
-            $y = $y + 0.5 * ($k1 + $k2);
-            $x = $x + $h;
-            $result[] = ['x' => $x, 'y' => $y];
-        }
-    
-        return $result;
+
+        // Método de Euler Mejorado
+        $k1 = $h * $f($x, $y);
+        $k2 = $h * $f($x + $h, $y + $k1);
+        $y = $y + 0.5 * ($k1 + $k2);
+        $x = $x + $h;
+
+        // Guardamos los resultados
+        $result[] = ['x' => round($x, 6), 'y' => round($y, 6)];
     }
+
+    return $result;
+}
+
+
+
+
+
+    
+
     
     public function calculateKutta(Request $request)
     {

@@ -14,6 +14,18 @@
             <form action="{{route('calculate-euler')}}" method="POST">
                 @csrf
                 <div class="mb-4">
+                    <label for="equation" class="block text-gray-700">Ecuación (f(x, y)):</label>
+                    <textarea name="equation" id="equation" rows="2" required
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                        oninput="updateEquation()"></textarea>
+                    <small class="text-gray-500">Ejemplo: x^2 - y</small>
+                </div>
+                
+                <!-- Aquí se mostrará la ecuación en formato MathJax -->
+                <p class="mt-2 text-gray-700">Vista previa de la ecuación:</p>
+                <div id="equation-preview" class="text-xl font-semibold text-indigo-700"></div>
+                
+                <div class="mb-4">
                     <label for="x0" class="block text-gray-700">x0:</label>
                     <input type="number" step="any" name="x0" id="x0" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
@@ -29,15 +41,10 @@
                     <label for="n" class="block text-gray-700">n (número de pasos):</label>
                     <input type="number" name="n" id="n" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
                 </div>
-                <div class="mb-4">
-                    <label for="equation" class="block text-gray-700">Ecuación (f(x, y)):</label>
-                    <textarea name="equation" id="equation" rows="4" required class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"></textarea>
-                    <small class="text-gray-500">Ejemplo: x * y o x + y</small>
-                </div>
+                
                 <button type="submit" class="w-full bg-indigo-500 text-white py-2 px-4 rounded-md hover:bg-indigo-600">Calcular</button>
             </form>
         </div>
-
         <!-- Resultados -->
         @if(isset($result))
             <div class="bg-white shadow-md rounded-lg p-6">
@@ -61,5 +68,28 @@
             </div>
         @endif
     </div>
+    <script type="text/javascript" async
+   src="https://polyfill.io/v3/polyfill.min.js?features=es6">
+</script>
+<script type="text/javascript" async
+   src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+<script>
+    function updateEquation() {
+        let equationInput = document.getElementById("equation").value;
+        let equationPreview = document.getElementById("equation-preview");
+
+        // Reemplazamos los operadores correctamente para MathJax
+        let formattedEquation = equationInput
+            .replace(/\^(\d+)/g, '^{\$1}') // Corrige exponentes con números (x^2 → x^{2})
+            .replace(/\*/g, '\\cdot ') // Cambia * por ⋅ para multiplicación
+
+        // Mostrar en MathJax
+        equationPreview.innerHTML = `\\( ${formattedEquation} \\)`;
+        MathJax.typesetPromise(); // Renderiza MathJax
+    }
+</script>
+
+
 </body>
 </html>
