@@ -121,35 +121,59 @@ private function rungeKutta($x0, $y0, $h, $n, $equation)
 }
 
 
-    public function calculateNewton(Request $request)
-    {
-        $x0 = $request->input('x0');
-        $tol = $request->input('tol');
-        $maxIter = $request->input('maxIter');
+public function calculateNewton(Request $request)
+{
+    $x0 = floatval($request->input('x0'));
+    $tol = floatval($request->input('tol'));
+    $maxIter = intval($request->input('maxIter'));
+    $equation = $request->input('equation'); 
 
-        $result = $this->newtonRaphson($x0, $tol, $maxIter);
-        return view('methods-views.newton-method', ['result' => $result]);
-    }
+    $result = $this->newtonRaphson($x0, $tol, $maxIter, $equation);
+    return view('methods-views.newton-method', ['result' => $result]);
+}
 
-    public function newtonRaphson($x0, $tol, $maxIter)
-    {
-        $result = [];
-        $x = $x0;
-        for ($i = 0; $i < $maxIter; $i++) {
-            $fx = $this->fN($x);
-            $dfx = $this->df($x);
-            if ($dfx == 0) {
-                break; // Avoid division by zero
-            }
-            $x1 = $x - $fx / $dfx;
-            $result[] = ['iteration' => $i, 'x' => $x1];
-            if (abs($x1 - $x) < $tol) {
-                break; // Convergence criterion
-            }
-            $x = $x1;
+private function newtonRaphson($x0, $tol, $maxIter, $equation)
+{
+    $result = [];
+    $x = $x0;
+
+    // Convertimos ^ en ** para la potencia en PHP
+    $equation = str_replace('^', '**', $equation);
+
+    for ($i = 0; $i < $maxIter; $i++) {
+        $fx = $this->evaluateFunction($equation, $x);
+        $dfx = $this->evaluateDerivative($equation, $x);
+
+        if ($dfx == 0) {
+            break; // Evita división por cero
         }
-        return $result;
+
+        $x1 = $x - $fx / $dfx;
+        $result[] = ['iteration' => $i, 'x' => round($x1, 6)];
+
+        if (abs($x1 - $x) < $tol) {
+            break; // Criterio de convergencia
+        }
+
+        $x = $x1;
     }
+
+    return $result;
+}
+
+private function evaluateFunction($equation, $x)
+{
+    $equationEvaluable = str_replace('x', '$x', $equation);
+    return eval("return $equationEvaluable;");
+}
+
+private function evaluateDerivative($equation, $x)
+{
+    // Aproximación numérica de la derivada usando diferencia central
+    $h = 1e-6;
+    $df = ($this->evaluateFunction($equation, $x + $h) - $this->evaluateFunction($equation, $x - $h)) / (2 * $h);
+    return $df;
+}
 
     private function fN($x)
     {
