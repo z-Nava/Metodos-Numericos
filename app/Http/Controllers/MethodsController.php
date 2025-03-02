@@ -74,44 +74,51 @@ class MethodsController extends Controller
     
 
     
-    public function calculateKutta(Request $request)
-    {
-        $x0 = $request->input('x0');
-        $y0 = $request->input('y0');
-        $h = $request->input('h');
-        $n = $request->input('n');
-        $equation = $request->input('equation');  // Leemos la ecuación ingresada
+public function calculateKutta(Request $request)
+{
+    $x0 = floatval($request->input('x0'));
+    $y0 = floatval($request->input('y0'));
+    $h = floatval($request->input('h'));
+    $n = intval($request->input('n'));
+    $equation = $request->input('equation');  
 
-        $result = $this->rungeKutta($x0, $y0, $h, $n, $equation);  // Pasamos la ecuación al cálculo
+    $result = $this->rungeKutta($x0, $y0, $h, $n, $equation);
 
-        return view('methods-views.kutta-method', ['result' => $result]);
-    }
+    return view('methods-views.kutta-method', ['result' => $result]);
+}
 
-    private function rungeKutta($x0, $y0, $h, $n, $equation)
-    {
-        $x = $x0;
-        $y = $y0;
-        $result = [];
+private function rungeKutta($x0, $y0, $h, $n, $equation)
+{
+    $x = $x0;
+    $y = $y0;
+    $result = [];
 
-        // Creamos una función anónima para evaluar la ecuación en cada paso
-        $f = function($x, $y) use ($equation) {
-            // Reemplazamos 'x' y 'y' en la ecuación y luego evaluamos
-            $equation = str_replace(['x', 'y'], ['($x)', '($y)'], $equation);
-            return eval("return $equation;");
+    // Convertimos ^ en ** para la potencia en PHP
+    $equation = str_replace('^', '**', $equation);
+
+    for ($i = 0; $i < $n; $i++) {
+        // Reemplazamos 'x' y 'y' por variables PHP
+        $equationEvaluable = str_replace(['x', 'y'], ['$x', '$y'], $equation);
+
+        $f = function ($x, $y) use ($equationEvaluable) {
+            return eval("return $equationEvaluable;");
         };
 
-        for ($i = 0; $i < $n; $i++) {
-            $k1 = $h * $f($x, $y);
-            $k2 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k1);
-            $k3 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k2);
-            $k4 = $h * $f($x + $h, $y + $k3);
-            $y = $y + (1 / 6) * ($k1 + 2 * $k2 + 2 * $k3 + $k4);
-            $x = $x + $h;
-            $result[] = ['x' => $x, 'y' => $y];
-        }
+        // Runge-Kutta de cuarto orden
+        $k1 = $h * $f($x, $y);
+        $k2 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k1);
+        $k3 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k2);
+        $k4 = $h * $f($x + $h, $y + $k3);
 
-        return $result;
+        $y = $y + (1 / 6) * ($k1 + 2 * $k2 + 2 * $k3 + $k4);
+        $x = $x + $h;
+
+        // Redondeamos para mayor precisión
+        $result[] = ['x' => round($x, 6), 'y' => round($y, 6)];
     }
+
+    return $result;
+}
 
 
     public function calculateNewton(Request $request)
