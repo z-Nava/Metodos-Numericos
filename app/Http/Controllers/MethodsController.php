@@ -23,88 +23,119 @@ class MethodsController extends Controller
 
     public function calculateEuler(Request $request)
     {
-        // Convertimos los valores a float para evitar problemas con la evaluación
+        // Validar los datos ingresados
+        $request->validate([
+            'equation' => 'required|string',
+            'x0' => 'required|numeric',
+            'y0' => 'required|numeric',
+            'h' => 'required|numeric|gt:0', // h debe ser mayor que 0
+            'n' => 'required|integer|min:1', // n debe ser al menos 1
+            'decimales' => 'required|integer|min:0|max:10' // Limita el número de decimales entre 0 y 10
+        ], [
+            'h.gt' => 'El tamaño del paso (h) debe ser mayor que 0.',
+            'n.min' => 'El número de pasos (n) debe ser al menos 1.',
+            'decimales.min' => 'El número de decimales debe ser al menos 0.',
+            'decimales.max' => 'El número de decimales no puede ser mayor a 10.'
+        ]);
+
         $x0 = floatval($request->input('x0'));
         $y0 = floatval($request->input('y0'));
         $h = floatval($request->input('h'));
-        $n = intval($request->input('n')); // Aseguramos que es un número entero
+        $n = intval($request->input('n'));
+        $decimales = intval($request->input('decimales'));
         $equation = $request->input('equation');
 
-        // Llamamos al método de Euler Mejorado
-        $result = $this->eulerMejorado($x0, $y0, $h, $n, $equation);
+        $result = $this->eulerMejorado($x0, $y0, $h, $n, $equation, $decimales);
 
         return view('methods-views.euler-method', ['result' => $result]);
     }
 
-    private function eulerMejorado($x0, $y0, $h, $n, $equation)
-{
-    $x = $x0;
-    $y = $y0;
-    $result = [];
+        private function eulerMejorado($x0, $y0, $h, $n, $equation,$decimales)
+    {
+        $x = $x0;
+        $y = $y0;
+        $result = [];
 
-    // Reemplazamos operadores incorrectos antes de evaluar
-    $equation = str_replace('^', '**', $equation);
+        // 1. Convertimos ^ en ** (para exponentes en PHP)
+        $equation = str_replace('^', '**', $equation);
 
-    for ($i = 0; $i < $n; $i++) {
-        // Reemplazamos 'x' y 'y' en la ecuación con sus valores actuales
-        $equationEvaluable = str_replace(['x', 'y'], ['$x', '$y'], $equation);
+        // 2. Aseguramos que los coeficientes numéricos de "x" y "y" tengan un "*"
+        // Ejemplo: "3x" se convierte en "3*x", "2y" en "2*y"
+        $equation = preg_replace('/(\d)([xy])/', '$1*$2', $equation);
 
-        // Función anónima segura para evaluar la ecuación
-        $f = function ($x, $y) use ($equationEvaluable) {
-            return eval("return $equationEvaluable;");
+        // 3. Reemplazamos "x" y "y" por "$x" y "$y"
+        $equation = str_replace(['x', 'y'], ['$x', '$y'], $equation);
+
+        // 4. Creamos la función evaluable sin errores
+        $f = function ($x, $y) use ($equation) {
+            return eval("return $equation;");
         };
 
-        // Método de Euler Mejorado
-        $k1 = $h * $f($x, $y);
-        $k2 = $h * $f($x + $h, $y + $k1);
-        $y = $y + 0.5 * ($k1 + $k2);
-        $x = $x + $h;
+        for ($i = 0; $i < $n; $i++) {
+            // Método de Euler Mejorado
+            $k1 = $h * $f($x, $y);
+            $k2 = $h * $f($x + $h, $y + $k1);
+            $y = $y + 0.5 * ($k1 + $k2);
+            $x = $x + $h;
 
-        // Guardamos los resultados
-        $result[] = ['x' => round($x, 6), 'y' => round($y, 6)];
+            // Formateamos los resultados con más decimales para mayor precisión
+            $result[] = [
+                'x' => number_format($x, $decimales, '.', ''), // 10 decimales
+                'y' => number_format($y, $decimales, '.', '')  // 10 decimales
+            ];
+        }
+
+        return $result;
     }
 
-    return $result;
-}
+    public function calculateKutta(Request $request)
+    {
+        // Validar que los valores ingresados sean correctos
+        $request->validate([
+            'equation' => 'required|string',
+            'x0' => 'required|numeric',
+            'y0' => 'required|numeric',
+            'h' => 'required|numeric|gt:0',  // h debe ser mayor que 0
+            'n' => 'required|integer|min:1'  // n debe ser al menos 1
+        ], [
+            'h.gt' => 'El tamaño del paso (h) debe ser mayor que 0.',
+            'n.min' => 'El número de pasos (n) debe ser al menos 1.'
+        ]);
+
+        $x0 = floatval($request->input('x0'));
+        $y0 = floatval($request->input('y0'));
+        $h = floatval($request->input('h'));
+        $n = intval($request->input('n'));
+        $equation = $request->input('equation');  
+
+        $result = $this->rungeKutta($x0, $y0, $h, $n, $equation);
+
+        return view('methods-views.kutta-method', ['result' => $result]);
+    }
 
 
-
-
-
-    
-
-    
-public function calculateKutta(Request $request)
-{
-    $x0 = floatval($request->input('x0'));
-    $y0 = floatval($request->input('y0'));
-    $h = floatval($request->input('h'));
-    $n = intval($request->input('n'));
-    $equation = $request->input('equation');  
-
-    $result = $this->rungeKutta($x0, $y0, $h, $n, $equation);
-
-    return view('methods-views.kutta-method', ['result' => $result]);
-}
-
-private function rungeKutta($x0, $y0, $h, $n, $equation)
+    private function rungeKutta($x0, $y0, $h, $n, $equation)
 {
     $x = $x0;
     $y = $y0;
     $result = [];
 
-    // Convertimos ^ en ** para la potencia en PHP
+    // 1. Convertir ^ en ** para potencias en PHP
     $equation = str_replace('^', '**', $equation);
 
+    // 2. Asegurar que los coeficientes numéricos de "x" y "y" tengan un "*"
+    $equation = preg_replace('/(\d)([xy])/', '$1*$2', $equation);
+
+    // 3. Reemplazar "x" y "y" por "$x" y "$y"
+    $equation = str_replace(['x', 'y'], ['$x', '$y'], $equation);
+
+    // 4. Crear la función de evaluación
+    $f = function ($x, $y) use ($equation) {
+        return eval("return $equation;");
+    };
+
     for ($i = 0; $i < $n; $i++) {
-        // Reemplazamos 'x' y 'y' por variables PHP
-        $equationEvaluable = str_replace(['x', 'y'], ['$x', '$y'], $equation);
-
-        $f = function ($x, $y) use ($equationEvaluable) {
-            return eval("return $equationEvaluable;");
-        };
-
-        // Runge-Kutta de cuarto orden
+        // Calcular valores de k1, k2, k3, k4
         $k1 = $h * $f($x, $y);
         $k2 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k1);
         $k3 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k2);
@@ -113,8 +144,15 @@ private function rungeKutta($x0, $y0, $h, $n, $equation)
         $y = $y + (1 / 6) * ($k1 + 2 * $k2 + 2 * $k3 + $k4);
         $x = $x + $h;
 
-        // Redondeamos para mayor precisión
-        $result[] = ['x' => round($x, 6), 'y' => round($y, 6)];
+        // Guardamos los resultados en la lista
+        $result[] = [
+            'x' => round($x, 6),
+            'y' => round($y, 6),
+            'k1' => round($k1, 6),
+            'k2' => round($k2, 6),
+            'k3' => round($k3, 6),
+            'k4' => round($k4, 6)
+        ];
     }
 
     return $result;
@@ -123,19 +161,33 @@ private function rungeKutta($x0, $y0, $h, $n, $equation)
 
 public function calculateNewton(Request $request)
 {
-    $x0 = floatval($request->input('x0'));
-    $tol = floatval($request->input('tol'));
-    $maxIter = intval($request->input('maxIter'));
-    $equation = $request->input('equation'); 
+    // Validaciones para evitar errores en el cálculo
+    $request->validate([
+        'equation' => 'required|string',
+        'x0' => 'required|numeric',
+        'precision' => 'required|integer|min:1|max:10', // Precisión entre 1 y 10
+    ], [
+        'precision.min' => 'El número de decimales debe ser al menos 1.',
+        'precision.max' => 'El número de decimales no puede ser mayor a 10.'
+    ]);
 
-    $result = $this->newtonRaphson($x0, $tol, $maxIter, $equation);
+    $x0 = floatval($request->input('x0'));
+    $precision = intval($request->input('precision'));
+    $equation = $request->input('equation');
+
+    $result = $this->newtonRaphson($x0, $precision, $equation);
+
     return view('methods-views.newton-method', ['result' => $result]);
 }
 
-private function newtonRaphson($x0, $tol, $maxIter, $equation)
+
+
+private function newtonRaphson($x0, $precision, $equation)
 {
     $result = [];
     $x = $x0;
+    $maxIter = 100;  // Máximo de iteraciones para evitar bucles infinitos
+    $tol = pow(10, -$precision); // Definir tolerancia según la precisión
 
     // Convertimos ^ en ** para la potencia en PHP
     $equation = str_replace('^', '**', $equation);
@@ -145,11 +197,16 @@ private function newtonRaphson($x0, $tol, $maxIter, $equation)
         $dfx = $this->evaluateDerivative($equation, $x);
 
         if ($dfx == 0) {
-            break; // Evita división por cero
+            return ['error' => 'La derivada es cero, el método no puede continuar.'];
         }
 
         $x1 = $x - $fx / $dfx;
-        $result[] = ['iteration' => $i, 'x' => round($x1, 6)];
+
+        // Guardamos los resultados
+        $result[] = [
+            'iteration' => $i,
+            'x' => number_format($x1, $precision, '.', '')
+        ];
 
         if (abs($x1 - $x) < $tol) {
             break; // Criterio de convergencia
@@ -161,35 +218,47 @@ private function newtonRaphson($x0, $tol, $maxIter, $equation)
     return $result;
 }
 
-private function evaluateFunction($equation, $x)
-{
-    $equationEvaluable = str_replace('x', '$x', $equation);
-    return eval("return $equationEvaluable;");
-}
 
-private function evaluateDerivative($equation, $x)
-{
-    // Aproximación numérica de la derivada usando diferencia central
-    $h = 1e-6;
-    $df = ($this->evaluateFunction($equation, $x + $h) - $this->evaluateFunction($equation, $x - $h)) / (2 * $h);
-    return $df;
-}
 
-    private function fN($x)
+
+    private function evaluateFunction($equation, $x)
     {
-        // Define aquí tu función
-        return $x * $x - 2; // Ejemplo: x^2 - 2
+        // Convertimos ^ en ** para la potencia en PHP
+        $equation = str_replace('^', '**', $equation);
+
+        // Asegurar que "3x" se convierta en "3*x"
+        $equation = preg_replace('/(\d)(x)/', '$1*$2', $equation);
+
+        // Reemplazamos "x" por "$x"
+        $equation = str_replace('x', '$x', $equation);
+
+        // Definimos $x dentro de eval()
+        return eval("return (function(\$x){ return $equation; })($x);");
     }
 
-    private function df($x)
+    private function evaluateDerivative($equation, $x)
     {
-        // Define aquí la derivada de tu función
-        return 2 * $x; // Ejemplo: derivada de x^2 - 2 es 2x
+        $h = 1e-6;
+        return ($this->evaluateFunction($equation, $x + $h) - $this->evaluateFunction($equation, $x - $h)) / (2 * $h);
     }
 
-    private function f($x, $y)
-    {
-        // Define aquí tu función diferencial
-        return $x + $y;
+
+
+        private function fN($x)
+        {
+            // Define aquí tu función
+            return $x * $x - 2; // Ejemplo: x^2 - 2
+        }
+
+        private function df($x)
+        {
+            // Define aquí la derivada de tu función
+            return 2 * $x; // Ejemplo: derivada de x^2 - 2 es 2x
+        }
+
+        private function f($x, $y)
+        {
+            // Define aquí tu función diferencial
+            return $x + $y;
+        }
     }
-}

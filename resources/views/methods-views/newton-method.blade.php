@@ -22,35 +22,28 @@
                             oninput="updateEquation()"></textarea>
                         <small class="text-gray-500">Ejemplo: x^3 - x - 2</small>
                     </div>
-        <!-- Vista previa de la ecuación con MathJax -->
-        <p class="mt-2 text-gray-700">Vista previa de la ecuación:</p>
-        <div id="equation-preview" class="text-xl font-semibold text-indigo-700"></div>
+                
+                    <!-- Vista previa de la ecuación con MathJax -->
+                    <p class="mt-2 text-gray-700">Vista previa de la ecuación:</p>
+                    <div id="equation-preview" class="text-xl font-semibold text-indigo-700"></div>
+                
                     <div class="mb-4">
                         <label for="x0" class="block text-gray-700">Valor inicial (x₀):</label>
                         <input type="number" step="any" name="x0" id="x0" required 
                             class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                    </div>
-        
+                    </div>  
+                
                     <div class="mb-4">
-                        <label for="tol" class="block text-gray-700">Tolerancia:</label>
-                        <input type="number" step="any" name="tol" id="tol" required 
+                        <label for="precision" class="block text-gray-700">Número de decimales:</label>
+                        <input type="number" name="precision" id="precision" value="0" min="0" required
                             class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
                     </div>
-        
-                    <div class="mb-4">
-                        <label for="maxIter" class="block text-gray-700">Máximo de Iteraciones:</label>
-                        <input type="number" name="maxIter" id="maxIter" required 
-                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
-                    </div>
-        
-                    
-        
+                
                     <button type="submit" class="w-full bg-indigo-500 text-white py-2 px-4 rounded-md hover:bg-indigo-600">
                         Calcular
                     </button>
                 </form>
             </div>
-        
             <!-- Resultados -->
             @if(isset($result))
                 <div class="bg-white shadow-md rounded-lg p-6">
@@ -74,6 +67,16 @@
                 </div>
             @endif
         </div>
+        @if ($errors->any())
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+        <strong>Errores en el formulario:</strong>
+        <ul class="mt-2">
+            @foreach ($errors->all() as $error)
+                <li>- {{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
         
         <!-- MathJax para la vista previa de ecuaciones -->
         <script type="text/javascript" async

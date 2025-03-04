@@ -54,29 +54,46 @@
                 </button>
             </form>
         </div>
-    
+        @if ($errors->any())
+        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+            <strong>Errores en el formulario:</strong>
+            <ul class="mt-2">
+                @foreach ($errors->all() as $error)
+                    <li>- {{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
         <!-- Resultados -->
         @if(isset($result))
-            <div class="bg-white shadow-md rounded-lg p-6">
-                <h2 class="text-xl font-semibold mb-4">Resultados del Método de Runge-Kutta</h2>
-                <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
-                    <thead class="bg-gray-800 text-white">
-                        <tr>
-                            <th class="w-1/2 px-4 py-2">x</th>
-                            <th class="w-1/2 px-4 py-2">y</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($result as $point)
-                            <tr class="bg-gray-100 border-b">
-                                <td class="text-center px-4 py-2">{{ $point['x'] }}</td>
-                                <td class="text-center px-4 py-2">{{ $point['y'] }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-        @endif
+    <div class="bg-white shadow-md rounded-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">Resultados del Método de Runge-Kutta</h2>
+        <table class="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+            <thead class="bg-gray-800 text-white">
+                <tr>
+                    <th class="px-4 py-2">x</th>
+                    <th class="px-4 py-2">y</th>
+                    <th class="px-4 py-2">k1</th>
+                    <th class="px-4 py-2">k2</th>
+                    <th class="px-4 py-2">k3</th>
+                    <th class="px-4 py-2">k4</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($result as $point)
+                    <tr class="bg-gray-100 border-b">
+                        <td class="text-center px-4 py-2">{{ $point['x'] }}</td>
+                        <td class="text-center px-4 py-2">{{ $point['y'] }}</td>
+                        <td class="text-center px-4 py-2">{{ $point['k1'] }}</td>
+                        <td class="text-center px-4 py-2">{{ $point['k2'] }}</td>
+                        <td class="text-center px-4 py-2">{{ $point['k3'] }}</td>
+                        <td class="text-center px-4 py-2">{{ $point['k4'] }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+@endif
     </div>
 </body>
 <!-- Agregamos MathJax para renderizar ecuaciones -->

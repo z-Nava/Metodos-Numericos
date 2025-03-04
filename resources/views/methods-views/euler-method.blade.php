@@ -14,6 +14,11 @@
             <form action="{{route('calculate-euler')}}" method="POST">
                 @csrf
                 <div class="mb-4">
+                    <label for="decimales" class="block text-gray-700">Decimales</label>
+                    <input type="number" step="any" name="decimales" id="decimales" required 
+                        class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
+                </div>
+                <div class="mb-4">
                     <label for="equation" class="block text-gray-700">Ecuación (f(x, y)):</label>
                     <textarea name="equation" id="equation" rows="2" required
                         class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -45,6 +50,16 @@
                 <button type="submit" class="w-full bg-indigo-500 text-white py-2 px-4 rounded-md hover:bg-indigo-600">Calcular</button>
             </form>
         </div>
+        @if ($errors->any())
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+        <strong>Errores en el formulario:</strong>
+        <ul class="mt-2">
+            @foreach ($errors->all() as $error)
+                <li>- {{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
         <!-- Resultados -->
         @if(isset($result))
             <div class="bg-white shadow-md rounded-lg p-6">
