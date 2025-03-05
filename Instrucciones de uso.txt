@@ -1,0 +1,22 @@
+**Instrucciones para inicializar el proyecto de laravel**
+
+1. Tener instalado PHP 8.2
+2. Tener instalado Composer
+
+3. Descargar el .zip del proyecto
+4. Descomprimir el proyecto y dirigirse a la carpeta
+5. Abrir un CMD o PowerShell dentro de la carpeta.
+6. Ejecutar "composer install". Esto instalara las dependecias de laravel
+7. Copia el ".env.example" y renombralo a ".env"
+8. Nuevamente en la consola (CMD o PowerShell) ejecuta "php artisan key:generate"
+9. Ejecuta "php artisan serve" esto iniciara un servidor local para poder entrar a la aplicacion web
+por lo general lo levanta en "http://127.0.0.1:8000/"
+
+**Dentro de la app**
+1. Al ingresar a la app, veras 3 cards, con opcion de entrar a Euler mejorado, Runge Kutta y Newton Raphson, ingresa al que gustes
+2. Al ingresar a cualquier opcion, la forma de colocar la ecuacion es la siguiente:
+Ejemplos de uso: 
+x^2 - y
+x + y
+x^2 * y - y^2 + x
+x^3 - x - 2
