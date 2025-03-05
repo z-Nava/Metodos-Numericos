@@ -114,125 +114,115 @@ class MethodsController extends Controller
     }
 
 
-    private function rungeKutta($x0, $y0, $h, $n, $equation)
-{
-    $x = $x0;
-    $y = $y0;
-    $result = [];
-
-    // 1. Convertir ^ en ** para potencias en PHP
-    $equation = str_replace('^', '**', $equation);
-
-    // 2. Asegurar que los coeficientes numéricos de "x" y "y" tengan un "*"
-    $equation = preg_replace('/(\d)([xy])/', '$1*$2', $equation);
-
-    // 3. Reemplazar "x" y "y" por "$x" y "$y"
-    $equation = str_replace(['x', 'y'], ['$x', '$y'], $equation);
-
-    // 4. Crear la función de evaluación
-    $f = function ($x, $y) use ($equation) {
-        return eval("return $equation;");
-    };
-
-    for ($i = 0; $i < $n; $i++) {
-        // Calcular valores de k1, k2, k3, k4
-        $k1 = $h * $f($x, $y);
-        $k2 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k1);
-        $k3 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k2);
-        $k4 = $h * $f($x + $h, $y + $k3);
-
-        $y = $y + (1 / 6) * ($k1 + 2 * $k2 + 2 * $k3 + $k4);
-        $x = $x + $h;
-
-        // Guardamos los resultados en la lista
-        $result[] = [
-            'x' => round($x, 6),
-            'y' => round($y, 6),
-            'k1' => round($k1, 6),
-            'k2' => round($k2, 6),
-            'k3' => round($k3, 6),
-            'k4' => round($k4, 6)
-        ];
-    }
-
-    return $result;
-}
-
-
-public function calculateNewton(Request $request)
-{
-    // Validaciones para evitar errores en el cálculo
-    $request->validate([
-        'equation' => 'required|string',
-        'x0' => 'required|numeric',
-        'precision' => 'required|integer|min:1|max:10', // Precisión entre 1 y 10
-    ], [
-        'precision.min' => 'El número de decimales debe ser al menos 1.',
-        'precision.max' => 'El número de decimales no puede ser mayor a 10.'
-    ]);
-
-    $x0 = floatval($request->input('x0'));
-    $precision = intval($request->input('precision'));
-    $equation = $request->input('equation');
-
-    $result = $this->newtonRaphson($x0, $precision, $equation);
-
-    return view('methods-views.newton-method', ['result' => $result]);
-}
-
-
-
-private function newtonRaphson($x0, $precision, $equation)
-{
-    $result = [];
-    $x = $x0;
-    $maxIter = 100;  // Máximo de iteraciones para evitar bucles infinitos
-    $tol = pow(10, -$precision); // Definir tolerancia según la precisión
-
-    // Convertimos ^ en ** para la potencia en PHP
-    $equation = str_replace('^', '**', $equation);
-
-    for ($i = 0; $i < $maxIter; $i++) {
-        $fx = $this->evaluateFunction($equation, $x);
-        $dfx = $this->evaluateDerivative($equation, $x);
-
-        if ($dfx == 0) {
-            return ['error' => 'La derivada es cero, el método no puede continuar.'];
-        }
-
-        $x1 = $x - $fx / $dfx;
-
-        // Guardamos los resultados
-        $result[] = [
-            'iteration' => $i,
-            'x' => number_format($x1, $precision, '.', '')
-        ];
-
-        if (abs($x1 - $x) < $tol) {
-            break; // Criterio de convergencia
-        }
-
-        $x = $x1;
-    }
-
-    return $result;
-}
-
-
-
-
-    private function evaluateFunction($equation, $x)
+        private function rungeKutta($x0, $y0, $h, $n, $equation)
     {
+        $x = $x0;
+        $y = $y0;
+        $result = [];
+
+        // 1. Convertir ^ en ** para potencias en PHP
+        $equation = str_replace('^', '**', $equation);
+
+        // 2. Asegurar que los coeficientes numéricos de "x" y "y" tengan un "*"
+        $equation = preg_replace('/(\d)([xy])/', '$1*$2', $equation);
+
+        // 3. Reemplazar "x" y "y" por "$x" y "$y"
+        $equation = str_replace(['x', 'y'], ['$x', '$y'], $equation);
+
+        // 4. Crear la función de evaluación
+        $f = function ($x, $y) use ($equation) {
+            return eval("return $equation;");
+        };
+
+        for ($i = 0; $i < $n; $i++) {
+            // Calcular valores de k1, k2, k3, k4
+            $k1 = $h * $f($x, $y);
+            $k2 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k1);
+            $k3 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k2);
+            $k4 = $h * $f($x + $h, $y + $k3);
+
+            $y = $y + (1 / 6) * ($k1 + 2 * $k2 + 2 * $k3 + $k4);
+            $x = $x + $h;
+
+            // Guardamos los resultados en la lista
+            $result[] = [
+                'x' => round($x, 6),
+                'y' => round($y, 6),
+                'k1' => round($k1, 6),
+                'k2' => round($k2, 6),
+                'k3' => round($k3, 6),
+                'k4' => round($k4, 6)
+            ];
+        }
+
+        return $result;
+    }
+    
+    public function calculateNewton(Request $request)
+    {
+        // Validaciones para evitar errores en el cálculo
+        $request->validate([
+            'equation' => 'required|string',
+            'x0' => 'required|numeric',
+            'precision' => 'required|integer|min:1|max:10', // Precisión entre 1 y 10
+        ], [
+            'precision.min' => 'El número de decimales debe ser al menos 1.',
+            'precision.max' => 'El número de decimales no puede ser mayor a 10.'
+        ]);
+
+        $x0 = floatval($request->input('x0'));
+        $precision = intval($request->input('precision'));
+        $equation = $request->input('equation');
+
+        $result = $this->newtonRaphson($x0, $precision, $equation);
+
+        return view('methods-views.newton-method', ['result' => $result]);
+    }
+
+    private function newtonRaphson($x0, $precision, $equation)
+    {
+        $result = [];
+        $x = $x0;
+        $maxIter = 100;  // Máximo de iteraciones para evitar bucles infinitos
+        $tol = pow(10, -$precision); // Definir tolerancia según la precisión
+
         // Convertimos ^ en ** para la potencia en PHP
         $equation = str_replace('^', '**', $equation);
 
-        // Asegurar que "3x" se convierta en "3*x"
+        for ($i = 0; $i < $maxIter; $i++) {
+            $fx = $this->evaluateFunction($equation, $x);
+            $dfx = $this->evaluateDerivative($equation, $x);
+
+            if ($dfx == 0) {
+                return ['error' => 'La derivada es cero, el método no puede continuar.'];
+            }
+
+            $x1 = $x - $fx / $dfx;
+
+            // Guardamos los resultados
+            $result[] = [
+                'iteration' => $i,
+                'x' => number_format($x1, $precision, '.', '')
+            ];
+
+            if (abs($x1 - $x) < $tol) {
+                break; // Criterio de convergencia
+            }
+
+            $x = $x1;
+        }
+
+        return $result;
+    }
+
+    private function evaluateFunction($equation, $x)
+    {
+        $equation = str_replace('^', '**', $equation);
+
         $equation = preg_replace('/(\d)(x)/', '$1*$2', $equation);
 
-        // Reemplazamos "x" por "$x"
         $equation = str_replace('x', '$x', $equation);
-
-        // Definimos $x dentro de eval()
+        
         return eval("return (function(\$x){ return $equation; })($x);");
     }
 
@@ -242,23 +232,18 @@ private function newtonRaphson($x0, $precision, $equation)
         return ($this->evaluateFunction($equation, $x + $h) - $this->evaluateFunction($equation, $x - $h)) / (2 * $h);
     }
 
-
-
-        private function fN($x)
-        {
-            // Define aquí tu función
-            return $x * $x - 2; // Ejemplo: x^2 - 2
-        }
-
-        private function df($x)
-        {
-            // Define aquí la derivada de tu función
-            return 2 * $x; // Ejemplo: derivada de x^2 - 2 es 2x
-        }
-
-        private function f($x, $y)
-        {
-            // Define aquí tu función diferencial
-            return $x + $y;
-        }
+    private function fN($x)
+    {
+        return $x * $x - 2; 
     }
+    
+    private function df($x)
+    {       
+        return 2 * $x; 
+    }
+
+    private function f($x, $y)
+    {
+        return $x + $y;
+    }
+}

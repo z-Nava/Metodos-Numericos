@@ -16,7 +16,7 @@ use App\Http\Controllers\MethodsController;
 
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('welcome');
 
 Route::get('/euler-method', [MethodsController::class, 'indexE'])->name('euler-method');
 Route::post('/euler-method', [MethodsController::class, 'calculateEuler'])->name('calculate-euler');

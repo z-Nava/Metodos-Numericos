@@ -7,7 +7,10 @@
 <body class="bg-gray-100 text-gray-900">
     <div class="container mx-auto p-4">
         <h1 class="text-2xl font-bold mb-4">Método de Runge-Kutta de Cuarto Orden</h1>
-    
+        <a href="{{ route('welcome') }}" class="bg-green-500 text-white px-4 py-2 rounded transition duration-300 hover:bg-green-600">
+            Ir a Inicio
+        </a>
+        
         <div class="bg-white shadow-md rounded-lg p-6 mb-6">
             <h2 class="text-xl font-semibold mb-4">Ingrese los datos</h2>
             <form action="{{ route('calculate-kutta') }}" method="POST">
