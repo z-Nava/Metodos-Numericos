@@ -99,7 +99,7 @@ private function eulerMejorado($x0, $y0, $h, $n, $equation, $decimales)
             'x0' => 'required|numeric',
             'y0' => 'required|numeric',
             'h' => 'required|numeric|gt:0',  // h debe ser mayor que 0
-            'n' => 'required|integer|min:1'  // n debe ser al menos 1
+            'n' => 'required|numeric|min:1'  // n debe ser al menos 1
         ], [
             'h.gt' => 'El tamaño del paso (h) debe ser mayor que 0.',
             'n.min' => 'El número de pasos (n) debe ser al menos 1.'
@@ -108,7 +108,7 @@ private function eulerMejorado($x0, $y0, $h, $n, $equation, $decimales)
         $x0 = floatval($request->input('x0'));
         $y0 = floatval($request->input('y0'));
         $h = floatval($request->input('h'));
-        $n = intval($request->input('n'));
+        $n = floatval($request->input('n'));
         $equation = $request->input('equation');  
 
         $result = $this->rungeKutta($x0, $y0, $h, $n, $equation);

@@ -46,7 +46,7 @@
     
                 <div class="mb-4">
                     <label for="n" class="block text-gray-700">n (Número de pasos):</label>
-                    <input type="number" name="n" id="n" required 
+                    <input type="step" name="n" id="n" required 
                         class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm">
                 </div>
     
