@@ -22,71 +22,74 @@ class MethodsController extends Controller
     }
 
     public function calculateEuler(Request $request)
-    {
-        // Validar los datos ingresados
-        $request->validate([
-            'equation' => 'required|string',
-            'x0' => 'required|numeric',
-            'y0' => 'required|numeric',
-            'h' => 'required|numeric|gt:0', // h debe ser mayor que 0
-            'n' => 'required|integer|min:1', // n debe ser al menos 1
-            'decimales' => 'required|integer|min:0|max:10' // Limita el número de decimales entre 0 y 10
-        ], [
-            'h.gt' => 'El tamaño del paso (h) debe ser mayor que 0.',
-            'n.min' => 'El número de pasos (n) debe ser al menos 1.',
-            'decimales.min' => 'El número de decimales debe ser al menos 0.',
-            'decimales.max' => 'El número de decimales no puede ser mayor a 10.'
-        ]);
+{
+    // Validar los datos ingresados
+    $request->validate([
+        'equation' => 'required|string',
+        'x0' => 'required|numeric',
+        'y0' => 'required|numeric',
+        'h' => 'required|numeric|gt:0', // h debe ser mayor que 0
+        'n' => 'required|numeric|min:1', // n debe ser al menos 1
+        'decimales' => 'required|integer|min:0|max:10' // Limita el número de decimales entre 0 y 10
+    ]);
 
-        $x0 = floatval($request->input('x0'));
-        $y0 = floatval($request->input('y0'));
-        $h = floatval($request->input('h'));
-        $n = intval($request->input('n'));
-        $decimales = intval($request->input('decimales'));
-        $equation = $request->input('equation');
+    $x0 = floatval($request->input('x0'));
+    $y0 = floatval($request->input('y0'));
+    $h = floatval($request->input('h'));
+    $n = floatval($request->input('n'));
+    $decimales = intval($request->input('decimales'));
+    $equation = $request->input('equation');
 
-        $result = $this->eulerMejorado($x0, $y0, $h, $n, $equation, $decimales);
+    $result = $this->eulerMejorado($x0, $y0, $h, $n, $equation, $decimales);
 
-        return view('methods-views.euler-method', ['result' => $result]);
+    return view('methods-views.euler-method', ['result' => $result]);
+}
+
+private function eulerMejorado($x0, $y0, $h, $n, $equation, $decimales)
+{
+    $x = $x0;
+    $y = $y0;
+    $result = [];
+
+    // 1. Convertimos ^ en ** (para exponentes en PHP)
+    $equation = str_replace('^', '**', $equation);
+
+    // 2. Aseguramos que los coeficientes numéricos de "x" y "y" tengan un "*"
+    // Ejemplo: "3x" se convierte en "3*x", "2y" en "2*y"
+    $equation = preg_replace('/(\d)([xy])/', '$1*$2', $equation);
+
+    // 3. Reemplazamos "x" y "y" por "$x" y "$y"
+    $equation = str_replace(['x', 'y'], ['$x', '$y'], $equation);
+
+    // 4. Creamos la función evaluable sin errores
+    $f = function ($x, $y) use ($equation) {
+        return eval("return (" . str_replace(['$x', '$y'], [$x, $y], $equation) . ");");
+    };
+
+    // Número de iteraciones correctas
+    $iterations = floor($n / $h);
+
+    for ($i = 0; $i < $iterations; $i++) {
+        // Evaluación de la ecuación en la iteración actual
+        $fx = $f($x, $y);
+
+        // Método de Euler Mejorado
+        $k1 = round($h * $fx, $decimales);
+        $tempY = round($y + $k1, $decimales);
+        $k2 = round($h * $f($x + $h, $tempY), $decimales);
+        $y = round($y + 0.5 * ($k1 + $k2), $decimales);
+        $x = round($x + $h, $decimales);
+
+        // Guardar resultados con valores numéricos correctos
+        $result[] = [
+            'x' => $x,
+            'y' => $y
+        ];
     }
 
-        private function eulerMejorado($x0, $y0, $h, $n, $equation,$decimales)
-    {
-        $x = $x0;
-        $y = $y0;
-        $result = [];
+    return $result;
+}
 
-        // 1. Convertimos ^ en ** (para exponentes en PHP)
-        $equation = str_replace('^', '**', $equation);
-
-        // 2. Aseguramos que los coeficientes numéricos de "x" y "y" tengan un "*"
-        // Ejemplo: "3x" se convierte en "3*x", "2y" en "2*y"
-        $equation = preg_replace('/(\d)([xy])/', '$1*$2', $equation);
-
-        // 3. Reemplazamos "x" y "y" por "$x" y "$y"
-        $equation = str_replace(['x', 'y'], ['$x', '$y'], $equation);
-
-        // 4. Creamos la función evaluable sin errores
-        $f = function ($x, $y) use ($equation) {
-            return eval("return $equation;");
-        };
-
-        for ($i = 0; $i < $n; $i++) {
-            // Método de Euler Mejorado
-            $k1 = $h * $f($x, $y);
-            $k2 = $h * $f($x + $h, $y + $k1);
-            $y = $y + 0.5 * ($k1 + $k2);
-            $x = $x + $h;
-
-            // Formateamos los resultados con más decimales para mayor precisión
-            $result[] = [
-                'x' => number_format($x, $decimales, '.', ''), // 10 decimales
-                'y' => number_format($y, $decimales, '.', '')  // 10 decimales
-            ];
-        }
-
-        return $result;
-    }
 
     public function calculateKutta(Request $request)
     {
