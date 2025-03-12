@@ -23,83 +23,114 @@ class MethodsController extends Controller
 
     public function calculateEuler(Request $request)
 {
-    // Validar los datos ingresados
-    $request->validate([
-        'equation' => 'required|string',
-        'x0' => 'required|numeric',
-        'y0' => 'required|numeric',
-        'h' => 'required|numeric|gt:0', // h debe ser mayor que 0
-        'n' => 'required|numeric|min:1', // n debe ser al menos 1
-        'decimales' => 'required|integer|min:0|max:10' // Limita el número de decimales entre 0 y 10
-    ]);
+    try {
+        // Validar los datos ingresados
+        $request->validate([
+            'equation' => 'required|string',
+            'x0' => 'required|numeric',
+            'y0' => 'required|numeric',
+            'h' => 'required|numeric|gt:0', // h debe ser mayor que 0
+            'n' => 'required|integer|min:1', // n debe ser al menos 1
+            'decimales' => 'required|integer|min:0|max:10' // Limita el número de decimales entre 0 y 10
+        ]);
 
-    $x0 = floatval($request->input('x0'));
-    $y0 = floatval($request->input('y0'));
-    $h = floatval($request->input('h'));
-    $n = floatval($request->input('n'));
-    $decimales = intval($request->input('decimales'));
-    $equation = $request->input('equation');
+        $x0 = floatval($request->input('x0'));
+        $y0 = floatval($request->input('y0'));
+        $h = floatval($request->input('h'));
+        $n = intval($request->input('n'));
+        $decimales = intval($request->input('decimales'));
+        $equation = $request->input('equation');
 
-    $result = $this->eulerMejorado($x0, $y0, $h, $n, $equation, $decimales);
+        // Llamamos a la función Euler Mejorado
+        $result = $this->eulerMejorado($x0, $y0, $h, $n, $equation, $decimales);
 
-    return view('methods-views.euler-method', ['result' => $result]);
+        return view('methods-views.euler-method', ['result' => $result]);
+
+    } catch (\Exception $e) {
+        return back()->withErrors(['error' => 'Error en el cálculo: ' . $e->getMessage()]);
+    }
 }
 
 private function eulerMejorado($x0, $y0, $h, $n, $equation, $decimales)
 {
-    $x = $x0;
-    $y = $y0;
-    $result = [];
+    try {
+        $x = $x0;
+        $y = $y0;
+        $result = [];
 
-    // 1. Convertimos ^ en ** (para exponentes en PHP)
-    $equation = str_replace('^', '**', $equation);
+        // Convertimos "^" en "**" (para exponenciación en PHP)
+        $equation = str_replace('^', '**', $equation);
 
-    // 2. Aseguramos que los coeficientes numéricos de "x" y "y" tengan un "*"
-    // Ejemplo: "3x" se convierte en "3*x", "2y" en "2*y"
-    $equation = preg_replace('/(\d)([xy])/', '$1*$2', $equation);
+        // Asegurar que los coeficientes numéricos tengan "*"
+        // Ejemplo: "2xy" → "2*x*y", "3x" → "3*x", "4y" → "4*y"
+        $equation = preg_replace('/(\d)([xy])/', '$1*$2', $equation);
+        $equation = preg_replace('/([xy])([xy])/', '$1*$2', $equation); // Maneja "xy" → "x*y"
 
-    // 3. Reemplazamos "x" y "y" por "$x" y "$y"
-    $equation = str_replace(['x', 'y'], ['$x', '$y'], $equation);
+        // Soporte para funciones matemáticas como sin(x), exp(x), log(x)
+        $equation = preg_replace_callback('/(sin|cos|tan|exp|log|sqrt)\((.*?)\)/', function ($matches) {
+            return $matches[1] . '($2)';
+        }, $equation);
 
-    // 4. Creamos la función evaluable sin errores
-    $f = function ($x, $y) use ($equation) {
-        return eval("return (" . str_replace(['$x', '$y'], [$x, $y], $equation) . ");");
-    };
+        // Convertir "x" y "y" en variables seguras
+        $equation = str_replace(['x', 'y'], ['$x', '$y'], $equation);
 
-    // Número de iteraciones correctas
-    $iterations = floor($n / $h);
+        // Definir la función matemática segura
+        $f = function ($x, $y) use ($equation) {
+            try {
+                // Asegurar formato correcto de números flotantes
+                $x = (strpos($x, '.') === 0) ? '0' . $x : $x;
+                $y = (strpos($y, '.') === 0) ? '0' . $y : $y;
 
-    for ($i = 0; $i < $iterations; $i++) {
-        // Evaluación de la ecuación en la iteración actual
-        $fx = $f($x, $y);
+                // Reemplazar variables en la ecuación
+                $expr = str_replace(['$x', '$y'], [$x, $y], $equation);
 
-        // Método de Euler Mejorado
-        $k1 = round($h * $fx, $decimales);
-        $tempY = round($y + $k1, $decimales);
-        $k2 = round($h * $f($x + $h, $tempY), $decimales);
-        $y = round($y + 0.5 * ($k1 + $k2), $decimales);
-        $x = round($x + $h, $decimales);
+                // Asegurar el formato correcto de números decimales (0.x en vez de .x)
+                $expr = preg_replace('/\b\.(\d+)/', '0.$1', $expr);
 
-        // Guardar resultados con valores numéricos correctos
-        $result[] = [
-            'x' => $x,
-            'y' => $y
-        ];
+                return eval("return (" . $expr . ");");
+            } catch (\Throwable $e) {
+                throw new \Exception("Error en la evaluación de la ecuación: " . $e->getMessage());
+            }
+        };
+
+        // Iterar N veces
+        for ($i = 0; $i < $n; $i++) {
+            // Evaluación de la ecuación
+            $fx = $f($x, $y);
+
+            // Método de Euler Mejorado
+            $k1 = $h * $fx;
+            $tempY = $y + $k1;
+            $k2 = $h * $f($x + $h, $tempY);
+            $y = $y + 0.5 * ($k1 + $k2);
+            $x = $x + $h;
+
+            // Guardar resultados con valores redondeados al final
+            $result[] = [
+                'x' => round($x, $decimales),
+                'y' => round($y, $decimales)
+            ];
+        }
+
+        return $result;
+    } catch (\Throwable $e) {
+        throw new \Exception("Error en el método Euler Mejorado: " . $e->getMessage());
     }
-
-    return $result;
 }
 
 
-    public function calculateKutta(Request $request)
-    {
+
+
+public function calculateKutta(Request $request)
+{
+    try {
         // Validar que los valores ingresados sean correctos
         $request->validate([
             'equation' => 'required|string',
             'x0' => 'required|numeric',
             'y0' => 'required|numeric',
             'h' => 'required|numeric|gt:0',  // h debe ser mayor que 0
-            'n' => 'required|numeric|min:1'  // n debe ser al menos 1
+            'n' => 'required|integer|min:1'  // n debe ser al menos 1
         ], [
             'h.gt' => 'El tamaño del paso (h) debe ser mayor que 0.',
             'n.min' => 'El número de pasos (n) debe ser al menos 1.'
@@ -108,35 +139,61 @@ private function eulerMejorado($x0, $y0, $h, $n, $equation, $decimales)
         $x0 = floatval($request->input('x0'));
         $y0 = floatval($request->input('y0'));
         $h = floatval($request->input('h'));
-        $n = floatval($request->input('n'));
-        $equation = $request->input('equation');  
+        $n = intval($request->input('n'));
+        $equation = $request->input('equation');
 
+        // Llamar a la función Runge-Kutta
         $result = $this->rungeKutta($x0, $y0, $h, $n, $equation);
 
         return view('methods-views.kutta-method', ['result' => $result]);
+
+    } catch (\Exception $e) {
+        return back()->withErrors(['error' => 'Error en el cálculo: ' . $e->getMessage()]);
     }
+}
 
-
-        private function rungeKutta($x0, $y0, $h, $n, $equation)
-    {
+private function rungeKutta($x0, $y0, $h, $n, $equation)
+{
+    try {
         $x = $x0;
         $y = $y0;
         $result = [];
 
-        // 1. Convertir ^ en ** para potencias en PHP
+        // Convertimos "^" en "**" para potencias en PHP
         $equation = str_replace('^', '**', $equation);
 
-        // 2. Asegurar que los coeficientes numéricos de "x" y "y" tengan un "*"
+        // Asegurar que los coeficientes numéricos tengan "*"
         $equation = preg_replace('/(\d)([xy])/', '$1*$2', $equation);
+        $equation = preg_replace('/([xy])([xy])/', '$1*$2', $equation); // Maneja "xy" → "x*y"
 
-        // 3. Reemplazar "x" y "y" por "$x" y "$y"
+        // Soporte para funciones matemáticas como sin(x), exp(x), log(x), sqrt(x)
+        $equation = preg_replace_callback('/(sin|cos|tan|exp|log|sqrt)\((.*?)\)/', function ($matches) {
+            return $matches[1] . '($2)';
+        }, $equation);
+
+        // Convertir "x" y "y" en variables seguras
         $equation = str_replace(['x', 'y'], ['$x', '$y'], $equation);
 
-        // 4. Crear la función de evaluación
+        // Definir la función matemática segura
         $f = function ($x, $y) use ($equation) {
-            return eval("return $equation;");
+            try {
+                // Asegurar formato correcto de números flotantes
+                $x = (strpos($x, '.') === 0) ? '0' . $x : $x;
+                $y = (strpos($y, '.') === 0) ? '0' . $y : $y;
+
+                // Reemplazar variables en la ecuación
+                $expr = str_replace(['$x', '$y'], [$x, $y], $equation);
+
+                // Asegurar el formato correcto de números decimales (0.x en vez de .x)
+                $expr = preg_replace('/\b\.(\d+)/', '0.$1', $expr);
+
+                return eval("return (" . $expr . ");");
+            } catch (\Throwable $e) {
+                throw new \Exception("Error en la evaluación de la ecuación: " . $e->getMessage());
+            }
         };
 
+        // Iterar N veces (Runge-Kutta de 4to orden)
         for ($i = 0; $i < $n; $i++) {
             // Calcular valores de k1, k2, k3, k4
             $k1 = $h * $f($x, $y);
@@ -144,10 +201,11 @@ private function eulerMejorado($x0, $y0, $h, $n, $equation, $decimales)
             $k3 = $h * $f($x + 0.5 * $h, $y + 0.5 * $k2);
             $k4 = $h * $f($x + $h, $y + $k3);
 
+            // Aplicar la fórmula de Runge-Kutta
             $y = $y + (1 / 6) * ($k1 + 2 * $k2 + 2 * $k3 + $k4);
             $x = $x + $h;
 
-            // Guardamos los resultados en la lista
+            // Guardar resultados con valores redondeados al final
             $result[] = [
                 'x' => round($x, 6),
                 'y' => round($y, 6),
@@ -159,10 +217,14 @@ private function eulerMejorado($x0, $y0, $h, $n, $equation, $decimales)
         }
 
         return $result;
+    } catch (\Throwable $e) {
+        throw new \Exception("Error en el método Runge-Kutta: " . $e->getMessage());
     }
-    
-    public function calculateNewton(Request $request)
-    {
+}
+
+public function calculateNewton(Request $request)
+{
+    try {
         // Validaciones para evitar errores en el cálculo
         $request->validate([
             'equation' => 'required|string',
@@ -177,19 +239,25 @@ private function eulerMejorado($x0, $y0, $h, $n, $equation, $decimales)
         $precision = intval($request->input('precision'));
         $equation = $request->input('equation');
 
+        // Llamar a la función de Newton-Raphson
         $result = $this->newtonRaphson($x0, $precision, $equation);
 
         return view('methods-views.newton-method', ['result' => $result]);
-    }
 
-    private function newtonRaphson($x0, $precision, $equation)
-    {
+    } catch (\Exception $e) {
+        return back()->withErrors(['error' => 'Error en el cálculo: ' . $e->getMessage()]);
+    }
+}
+
+private function newtonRaphson($x0, $precision, $equation)
+{
+    try {
         $result = [];
         $x = $x0;
         $maxIter = 100;  // Máximo de iteraciones para evitar bucles infinitos
         $tol = pow(10, -$precision); // Definir tolerancia según la precisión
 
-        // Convertimos ^ en ** para la potencia en PHP
+        // Convertimos "^" en "**" para la potencia en PHP
         $equation = str_replace('^', '**', $equation);
 
         for ($i = 0; $i < $maxIter; $i++) {
@@ -197,15 +265,17 @@ private function eulerMejorado($x0, $y0, $h, $n, $equation, $decimales)
             $dfx = $this->evaluateDerivative($equation, $x);
 
             if ($dfx == 0) {
-                return ['error' => 'La derivada es cero, el método no puede continuar.'];
+                throw new \Exception("La derivada es cero en x = $x, el método no puede continuar.");
             }
 
             $x1 = $x - $fx / $dfx;
 
             // Guardamos los resultados
             $result[] = [
-                'iteration' => $i,
-                'x' => number_format($x1, $precision, '.', '')
+                'iteration' => $i + 1,
+                'x' => round($x1, $precision),
+                'f(x)' => round($fx, $precision),
+                'f\'(x)' => round($dfx, $precision)
             ];
 
             if (abs($x1 - $x) < $tol) {
@@ -216,24 +286,44 @@ private function eulerMejorado($x0, $y0, $h, $n, $equation, $decimales)
         }
 
         return $result;
+    } catch (\Throwable $e) {
+        throw new \Exception("Error en el método Newton-Raphson: " . $e->getMessage());
     }
+}
 
-    private function evaluateFunction($equation, $x)
-    {
+private function evaluateFunction($equation, $x)
+{
+    try {
+        // Convertir ^ en ** y agregar multiplicaciones implícitas
         $equation = str_replace('^', '**', $equation);
-
         $equation = preg_replace('/(\d)(x)/', '$1*$2', $equation);
 
-        $equation = str_replace('x', '$x', $equation);
-        
-        return eval("return (function(\$x){ return $equation; })($x);");
-    }
+        // Soporte para funciones matemáticas como sin(x), exp(x), log(x)
+        $equation = preg_replace_callback('/(sin|cos|tan|exp|log|sqrt)\((.*?)\)/', function ($matches) {
+            return $matches[1] . '($2)';
+        }, $equation);
 
-    private function evaluateDerivative($equation, $x)
-    {
-        $h = 1e-6;
-        return ($this->evaluateFunction($equation, $x + $h) - $this->evaluateFunction($equation, $x - $h)) / (2 * $h);
+        // Convertir "x" en variable segura
+        $equation = str_replace('x', '$x', $equation);
+
+        // Evaluar la función
+        return eval("return (function(\$x){ return $equation; })($x);");
+
+    } catch (\Throwable $e) {
+        throw new \Exception("Error al evaluar la ecuación: " . $e->getMessage());
     }
+}
+
+private function evaluateDerivative($equation, $x)
+{
+    try {
+        $h = 1e-6; // Pequeño incremento para aproximación numérica
+        return ($this->evaluateFunction($equation, $x + $h) - $this->evaluateFunction($equation, $x - $h)) / (2 * $h);
+    } catch (\Throwable $e) {
+        throw new \Exception("Error al calcular la derivada: " . $e->getMessage());
+    }
+}
+
 
     private function fN($x)
     {

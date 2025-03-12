@@ -19,9 +19,29 @@
                         <label for="equation" class="block text-gray-700">Ecuación (f(x)):</label>
                         <textarea name="equation" id="equation" rows="2" required
                             class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
-                            oninput="updateEquation()"></textarea>
+                            oninput="validateEquation()"></textarea>
                         <small class="text-gray-500">Ejemplo: x^3 - x - 2</small>
+                        <p id="error-message" class="text-red-500 hidden">❌ No puedes ingresar la variable "y". Usa solo "x".</p>
                     </div>
+                    
+                    <script>
+                        function validateEquation() {
+                            let textarea = document.getElementById("equation");
+                            let errorMessage = document.getElementById("error-message");
+                        
+                            // Eliminar cualquier aparición de "y"
+                            let newValue = textarea.value.replace(/y/g, '');
+                            
+                            if (textarea.value !== newValue) {
+                                errorMessage.classList.remove("hidden"); // Mostrar mensaje de error
+                            } else {
+                                errorMessage.classList.add("hidden"); // Ocultar mensaje de error
+                            }
+                        
+                            textarea.value = newValue; // Asignar el nuevo valor sin "y"
+                        }
+                        </script>
+                    
                 
                     <!-- Vista previa de la ecuación con MathJax -->
                     <p class="mt-2 text-gray-700">Vista previa de la ecuación:</p>
@@ -77,7 +97,6 @@
         </ul>
     </div>
 @endif
-        
         <!-- MathJax para la vista previa de ecuaciones -->
         <script type="text/javascript" async
             src="https://polyfill.io/v3/polyfill.min.js?features=es6">
@@ -101,6 +120,7 @@
                 MathJax.typesetPromise();
             }
         </script>
+        
         
     </body>
 </html>
